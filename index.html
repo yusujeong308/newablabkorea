@@ -1509,7 +1509,20 @@
 
       storeMarkers.push(storeData);
     }
+    
+validStores.sort((a, b) => {
+  const getPriority = (store) => {
+    const value = String(store.brand || "").trim();
 
+    if (value === "미방문") return 0;     // 가장 뒤
+    if (value === "확인필요") return 1;
+    if (value === "완료") return 2;
+    return 3; // 기타는 제일 위
+  };
+
+  return getPriority(a) - getPriority(b);
+});
+    
     function buildMarkersInChunks(validStores, chunkSize = 40) {
       const taskId = markersBuildTaskId;
       let index = 0;
