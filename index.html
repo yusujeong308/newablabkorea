@@ -436,6 +436,7 @@
     .marker-red { background: #e03131; }
     .marker-blue { background: #1c7ed6; }
     .marker-gray { background: #ced4da; }
+    .marker-purple { background: #7950f2; }
 
     .marker-legend-toggle {
       position: absolute;
@@ -511,37 +512,54 @@
 
       .selected-store { min-height: auto; }
 
-.sidebar-toggle {
-  position: absolute;
-  top: auto;
-  left: auto;
-  right: 12px;
-  bottom: 12px;
-  padding: 7px 9px;
-  font-size: 11px;
-  min-width: 72px;
-  width: 72px;
-  z-index: 21;
-}
+      .top-buttons {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        right: auto;
+        bottom: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        z-index: 20;
+      }
 
-.top-buttons {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  right: auto;
-  bottom: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  z-index: 20;
-}
+      .top-buttons button {
+        padding: 7px 9px;
+        font-size: 11px;
+        min-width: 72px;
+        width: 72px;
+      }
 
-.top-buttons button {
-  padding: 7px 9px;
-  font-size: 11px;
-  min-width: 72px;
-  width: 72px;
-}
+      .marker-legend-toggle {
+        position: absolute;
+        right: 12px;
+        bottom: 56px;
+        padding: 8px 10px;
+        font-size: 12px;
+        z-index: 20;
+      }
+
+      .sidebar-toggle {
+        position: absolute;
+        top: auto;
+        left: auto;
+        right: 12px;
+        bottom: 12px;
+        padding: 7px 9px;
+        font-size: 11px;
+        min-width: 72px;
+        width: 72px;
+        z-index: 21;
+      }
+
+      .roadview-wrap {
+        top: 56px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+        height: 240px;
+      }
 
       .roadview-wrap.expanded {
         top: 56px;
@@ -568,7 +586,7 @@
 
       .marker-legend {
         right: 12px;
-        bottom: 50px;
+        bottom: 100px;
         width: 180px;
       }
 
@@ -590,15 +608,6 @@
         font-size: 12px;
         margin-bottom: 6px;
       }
-
-.marker-legend-toggle {
-  position: absolute;
-  right: 12px;
-  bottom: 56px;
-  padding: 8px 10px;
-  font-size: 12px;
-  z-index: 20;
-}
     }
   </style>
 </head>
@@ -671,7 +680,6 @@
           <span id="markerLegendTitle">핀 색상 안내</span>
           <button type="button" class="marker-legend-close" onclick="toggleMarkerLegend()">닫기</button>
         </div>
-
         <div class="marker-legend-list" id="markerLegendList"></div>
       </div>
 
@@ -769,11 +777,13 @@
     function getCheckPinColor(type) {
       const value = String(type || "").trim();
 
+      if (!value) return "#7950f2";      // 빈칸 = 보라
       if (value === "완료") return "#2f9e44";
       if (value === "확인필요") return "#f08c00";
       if (value === "미방문") return "#e03131";
       if (value === "기타") return "#1c7ed6";
-      return "#7950f2";
+
+      return "#1c7ed6";                  // 기타/기타값 = 파랑
     }
 
     function parseTimeRange(text) {
@@ -909,6 +919,10 @@
           <div class="marker-legend-item">
             <span class="marker-dot marker-blue"></span>
             <span>기타</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot marker-purple"></span>
+            <span>빈칸</span>
           </div>
         `;
       }
@@ -1509,21 +1523,23 @@
 
       storeMarkers.push(storeData);
     }
-    
-validStores.sort((a, b) => {
-  const getPriority = (store) => {
-    const value = String(store.brand || "").trim();
 
-    if (value === "미방문") return 0;     // 가장 뒤
-    if (value === "확인필요") return 1;
-    if (value === "완료") return 2;
-    return 3; // 기타는 제일 위
-  };
-
-  return getPriority(a) - getPriority(b);
-});
-    
     function buildMarkersInChunks(validStores, chunkSize = 40) {
+      validStores.sort((a, b) => {
+        const getPriority = (store) => {
+          const value = String(store.brand || "").trim();
+
+          if (value === "미방문") return 0;   // 가장 뒤
+          if (value === "확인필요") return 1;
+          if (value === "완료") return 2;
+          if (value === "기타") return 3;
+          if (!value) return 4;               // 빈칸은 제일 위
+          return 3;
+        };
+
+        return getPriority(a) - getPriority(b);
+      });
+
       const taskId = markersBuildTaskId;
       let index = 0;
 
