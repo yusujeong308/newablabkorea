@@ -467,10 +467,15 @@
       color: #f08c00;
     }
 
-    .status-closed {
-      background: #fff5f5;
-      color: #e03131;
-    }
+.status-closed {
+  background: #f3f0ee;
+  color: #8b5e3c;
+}
+
+.status-empty {
+  background: #f1f3f5;
+  color: #868e96;
+}
 
     .status-sub {
       font-size: 15px;
@@ -814,7 +819,7 @@
       if (value === "미방문") return "#e03131";
       if (value === "기타") return "#1c7ed6";
 
-      return "#1c7ed6";
+      return "#8b5e3c";
     }
 
     function parseTimeRange(text) {
@@ -847,94 +852,89 @@
     function getStatusClass(status) {
       if (status === "운영중") return "status-open";
       if (status === "브레이크타임") return "status-break";
+      if (status === "정보없음") return "status-empty";
       return "status-closed";
     }
 
-    function getStoreStatus(store) {
-      const now = new Date();
-      const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
-      const today = dayNames[now.getDay()];
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
+function getStoreStatus(store) {
+  const now = new Date();
+  const dayNames = ["일", "월", "화", "수", "목", "금", "토"];
+  const today = dayNames[now.getDay()];
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
 
-      const operatingDays = String(store.operating_days || "").trim();
-      const operatingHours = String(store.operating_hours || "").trim();
-      const breakTime = String(store.break_time || "").trim();
+  const operatingDays = String(store.operating_days || "").trim();
+  const operatingHours = String(store.operating_hours || "").trim();
+  const breakTime = String(store.break_time || "").trim();
 
-      if (!operatingDays || !operatingHours) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
-      }
+  if (!operatingDays || !operatingHours) {
+    return {
+      status: "정보없음",
+      message: "운영 정보 없음"
+    };
+  }
 
-      const validDays = operatingDays
-        .split(",")
-        .map(v => v.trim())
-        .filter(Boolean);
+  const validDays = operatingDays
+    .split(",")
+    .map(v => v.trim())
+    .filter(Boolean);
 
-      if (!validDays.includes(today)) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
-      }
+  const range = parseTimeRange(operatingHours);
+  if (!range) {
+    return {
+      status: "정보없음",
+      message: "운영 정보 없음"
+    };
+  }
 
-      const range = parseTimeRange(operatingHours);
-      if (!range) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
-      }
+  if (!validDays.includes(today)) {
+    return {
+      status: "미운영",
+      message: "운영 종료"
+    };
+  }
 
-      const breakRange = breakTime ? parseTimeRange(breakTime) : null;
+  if (nowMinutes < range.start || nowMinutes > range.end) {
+    return {
+      status: "미운영",
+      message: "운영 종료"
+    };
+  }
 
-      if (nowMinutes < range.start) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
-      }
+  const breakRange = breakTime ? parseTimeRange(breakTime) : null;
 
-      if (nowMinutes > range.end) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
-      }
+  if (breakRange && nowMinutes >= breakRange.start && nowMinutes <= breakRange.end) {
+    return {
+      status: "브레이크타임",
+      message: `${formatRemainTime(breakRange.end - nowMinutes)} 후 운영 재개`
+    };
+  }
 
-      if (breakRange && nowMinutes >= breakRange.start && nowMinutes <= breakRange.end) {
-        return {
-          status: "브레이크타임",
-          message: `${formatRemainTime(breakRange.end - nowMinutes)} 후 운영 재개`
-        };
-      }
+  if (breakRange && nowMinutes < breakRange.start) {
+    return {
+      status: "운영중",
+      message: `${formatRemainTime(breakRange.start - nowMinutes)} 후 브레이크타임`
+    };
+  }
 
-      if (breakRange && nowMinutes < breakRange.start) {
-        return {
-          status: "운영중",
-          message: `${formatRemainTime(breakRange.start - nowMinutes)} 후 브레이크타임`
-        };
-      }
-
-      return {
-        status: "운영중",
-        message: `${formatRemainTime(range.end - nowMinutes)} 후 운영 종료`
-      };
-    }
+  return {
+    status: "운영중",
+    message: `${formatRemainTime(range.end - nowMinutes)} 후 운영 종료`
+  };
+}
 
     function isStoreOpen(store) {
       const statusInfo = getStoreStatus(store);
       return statusInfo.status === "운영중";
     }
 
-    function getOpenStatusPinColor(store) {
-      const statusInfo = getStoreStatus(store);
+function getOpenStatusPinColor(store) {
+  const statusInfo = getStoreStatus(store);
 
-      if (statusInfo.status === "운영중") return "#2f9e44";
-      if (statusInfo.status === "브레이크타임") return "#f08c00";
-      return "#ced4da";
-    }
+  if (statusInfo.status === "운영중") return "#2f9e44";
+  if (statusInfo.status === "브레이크타임") return "#f08c00";
+  if (statusInfo.status === "정보없음") return "#ced4da";
+  return "#e03131";
+}
 
     function getPinPriority(store) {
       if (currentPinMode === "open") {
@@ -1017,20 +1017,24 @@
 
       if (currentPinMode === "open") {
         titleEl.textContent = "운영상태 핀 안내";
-        listEl.innerHTML = `
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-green"></span>
-            <span>운영중</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-yellow"></span>
-            <span>브레이크타임</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-gray"></span>
-            <span>미운영</span>
-          </div>
-        `;
+listEl.innerHTML = `
+  <div class="marker-legend-item">
+    <span class="marker-dot marker-green"></span>
+    <span>운영중</span>
+  </div>
+  <div class="marker-legend-item">
+    <span class="marker-dot marker-yellow"></span>
+    <span>브레이크타임</span>
+  </div>
+  <div class="marker-legend-item">
+    <span class="marker-dot marker-red"></span>
+    <span>운영종료</span>
+  </div>
+  <div class="marker-legend-item">
+    <span class="marker-dot marker-gray"></span>
+    <span>운영정보 없음</span>
+  </div>
+`;
       } else {
         titleEl.textContent = "확인용 핀 안내";
         listEl.innerHTML = `
