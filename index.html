@@ -468,14 +468,14 @@
     }
 
     .status-closed {
-      background: #f1f3f5;
-      color: #868e96;
+      background: #fff5f5;
+      color: #e03131;
     }
 
     .status-sub {
-      font-size: 13px;
-      font-weight: 700;
-      margin-top: 4px;
+      font-size: 15px;
+      font-weight: 800;
+      margin-top: 0;
     }
 
     @media (max-width: 768px) {
@@ -667,6 +667,7 @@
             <select id="openFilter" onchange="applyFilters()">
               <option value="">전체 상태</option>
               <option value="open">운영중</option>
+              <option value="break">브레이크타임</option>
               <option value="closed">미운영</option>
             </select>
           </div>
@@ -862,7 +863,7 @@
       if (!operatingDays || !operatingHours) {
         return {
           status: "미운영",
-          message: "운영 정보 없음"
+          message: "운영 종료"
         };
       }
 
@@ -874,7 +875,7 @@
       if (!validDays.includes(today)) {
         return {
           status: "미운영",
-          message: "오늘 미운영"
+          message: "운영 종료"
         };
       }
 
@@ -882,7 +883,7 @@
       if (!range) {
         return {
           status: "미운영",
-          message: "운영시간 정보 오류"
+          message: "운영 종료"
         };
       }
 
@@ -891,14 +892,14 @@
       if (nowMinutes < range.start) {
         return {
           status: "미운영",
-          message: `${formatRemainTime(range.start - nowMinutes)} 후 운영 시작`
+          message: "운영 종료"
         };
       }
 
       if (nowMinutes > range.end) {
         return {
           status: "미운영",
-          message: "오늘 운영 종료"
+          message: "운영 종료"
         };
       }
 
@@ -933,6 +934,24 @@
       if (statusInfo.status === "운영중") return "#2f9e44";
       if (statusInfo.status === "브레이크타임") return "#f08c00";
       return "#ced4da";
+    }
+
+    function getPinPriority(store) {
+      if (currentPinMode === "open") {
+        const status = getStoreStatus(store).status;
+        if (status === "미운영") return 0;
+        if (status === "브레이크타임") return 1;
+        if (status === "운영중") return 2;
+        return 0;
+      }
+
+      const value = String(store.brand || "").trim();
+      if (value === "미방문") return 0;
+      if (value === "확인필요") return 1;
+      if (value === "완료") return 2;
+      if (value === "기타") return 3;
+      if (!value) return 4;
+      return 3;
     }
 
     function getMarkerImage(store) {
@@ -1058,9 +1077,14 @@
     }
 
     function refreshMarkerImages() {
-      storeMarkers.forEach(store => {
+      const orderedStores = [...storeMarkers].sort((a, b) => getPinPriority(a) - getPinPriority(b));
+
+      orderedStores.forEach(store => {
         if (store.marker) {
+          const isVisible = !!store.marker.getMap();
+          store.marker.setMap(null);
           store.marker.setImage(getMarkerImage(store));
+          store.marker.setMap(isVisible ? map : null);
         }
       });
     }
@@ -1105,10 +1129,14 @@
       if (brand) results = results.filter(store => store.brand === brand);
       if (region) results = results.filter(store => store.region === region);
 
-      if (openFilter === "open") {
-        results = results.filter(store => isStoreOpen(store));
-      } else if (openFilter === "closed") {
-        results = results.filter(store => !isStoreOpen(store));
+      if (openFilter) {
+        results = results.filter(store => {
+          const status = getStoreStatus(store).status;
+          if (openFilter === "open") return status === "운영중";
+          if (openFilter === "break") return status === "브레이크타임";
+          if (openFilter === "closed") return status === "미운영";
+          return true;
+        });
       }
 
       if (keyword) {
@@ -1182,12 +1210,10 @@
 
       box.innerHTML = `
         <div class="status-top ${statusClass}">
-          ${statusInfo.status}
           <div class="status-sub">${statusInfo.message}</div>
         </div>
 
         <h2>${store.name}</h2>
-        <div class="row"><span class="label">지역</span>${store.region || "-"}</div>
         <div class="row"><span class="label">주소</span>${store.address || "-"}</div>
         <div class="row"><span class="label">상세주소</span>${store.detail_address || "-"}</div>
         <div class="row"><span class="label">운영요일</span>${store.operating_days || "-"}</div>
@@ -1247,7 +1273,6 @@
           <div class="store-item-meta">브레이크: ${store.break_time || "-"}</div>
           <div class="store-item-meta">전화: ${store.phone || "-"}</div>
           <div class="store-item-meta">확인용: ${store.brand || "-"}</div>
-          <div class="store-item-meta">상태: ${statusInfo.status}</div>
           <div class="store-item-meta">안내: ${statusInfo.message}</div>
           <div class="store-item-meta">비고: ${store.note || "-"}</div>
         `;
@@ -1336,10 +1361,8 @@
       return `
         <div class="info-box">
           <h3>${store.name}</h3>
-          <div><strong>지역</strong> <span>${region || "-"}</span></div>
           <div><strong>주소</strong> <span>${store.address || "-"}</span></div>
           <div><strong>상세주소</strong> <span>${store.detail_address || "-"}</span></div>
-          <div><strong>상태</strong> <span>${statusInfo.status}</span></div>
           <div><strong>안내</strong> <span>${statusInfo.message}</span></div>
           <div><strong>운영요일</strong> <span>${store.operating_days || "-"}</span></div>
           <div><strong>운영시간</strong> <span>${store.operating_hours || "-"}</span></div>
@@ -1652,20 +1675,7 @@
     }
 
     function buildMarkersInChunks(validStores, chunkSize = 40) {
-      validStores.sort((a, b) => {
-        const getPriority = (store) => {
-          const value = String(store.brand || "").trim();
-
-          if (value === "미방문") return 0;
-          if (value === "확인필요") return 1;
-          if (value === "완료") return 2;
-          if (value === "기타") return 3;
-          if (!value) return 4;
-          return 3;
-        };
-
-        return getPriority(a) - getPriority(b);
-      });
+      validStores.sort((a, b) => getPinPriority(a) - getPinPriority(b));
 
       const taskId = markersBuildTaskId;
       let index = 0;
