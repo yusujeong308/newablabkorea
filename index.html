@@ -435,6 +435,7 @@
     .marker-yellow { background: #f08c00; }
     .marker-red { background: #e03131; }
     .marker-blue { background: #1c7ed6; }
+    .marker-gray { background: #ced4da; }
 
     .marker-legend-toggle {
       position: absolute;
@@ -511,23 +512,34 @@
       .selected-store { min-height: auto; }
 
       .sidebar-toggle {
-        top: 12px;
+        position: absolute;
+        top: auto;
         left: 12px;
-        padding: 8px 10px;
-        font-size: 12px;
-        min-width: 70px;
+        bottom: 12px;
+        padding: 7px 9px;
+        font-size: 11px;
+        min-width: 72px;
+        width: 72px;
+        z-index: 21;
       }
 
       .top-buttons {
-        top: 12px;
-        right: 70px;
+        position: absolute;
+        top: auto;
+        right: auto;
+        left: 12px;
+        bottom: 56px;
+        display: flex;
+        flex-direction: column;
         gap: 6px;
+        z-index: 20;
       }
 
       .top-buttons button {
-        padding: 8px 10px;
-        font-size: 12px;
-        min-width: 70px;
+        padding: 7px 9px;
+        font-size: 11px;
+        min-width: 72px;
+        width: 72px;
       }
 
       .roadview-wrap {
@@ -807,7 +819,7 @@
     }
 
     function getOpenStatusPinColor(store) {
-      return isStoreOpen(store) ? "#2f9e44" : "#e03131";
+      return isStoreOpen(store) ? "#2f9e44" : "#ced4da";
     }
 
     function getMarkerImage(store) {
@@ -879,7 +891,7 @@
             <span>운영중</span>
           </div>
           <div class="marker-legend-item">
-            <span class="marker-dot marker-red"></span>
+            <span class="marker-dot marker-gray"></span>
             <span>미운영</span>
           </div>
         `;
