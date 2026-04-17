@@ -511,44 +511,37 @@
 
       .selected-store { min-height: auto; }
 
-      .sidebar-toggle {
-        position: absolute;
-        top: auto;
-        left: 12px;
-        bottom: 12px;
-        padding: 7px 9px;
-        font-size: 11px;
-        min-width: 72px;
-        width: 72px;
-        z-index: 21;
-      }
+.sidebar-toggle {
+  position: absolute;
+  top: auto;
+  left: auto;
+  right: 12px;
+  bottom: 12px;
+  padding: 7px 9px;
+  font-size: 11px;
+  min-width: 72px;
+  width: 72px;
+  z-index: 21;
+}
 
-      .top-buttons {
-        position: absolute;
-        top: auto;
-        right: auto;
-        left: 12px;
-        bottom: 56px;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        z-index: 20;
-      }
+.top-buttons {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  right: auto;
+  bottom: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 20;
+}
 
-      .top-buttons button {
-        padding: 7px 9px;
-        font-size: 11px;
-        min-width: 72px;
-        width: 72px;
-      }
-
-      .roadview-wrap {
-        top: 56px;
-        right: 12px;
-        left: 12px;
-        width: auto;
-        height: 240px;
-      }
+.top-buttons button {
+  padding: 7px 9px;
+  font-size: 11px;
+  min-width: 72px;
+  width: 72px;
+}
 
       .roadview-wrap.expanded {
         top: 56px;
@@ -598,12 +591,14 @@
         margin-bottom: 6px;
       }
 
-      .marker-legend-toggle {
-        right: 12px;
-        bottom: 12px;
-        padding: 8px 10px;
-        font-size: 12px;
-      }
+.marker-legend-toggle {
+  position: absolute;
+  right: 12px;
+  bottom: 56px;
+  padding: 8px 10px;
+  font-size: 12px;
+  z-index: 20;
+}
     }
   </style>
 </head>
