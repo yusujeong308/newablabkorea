@@ -213,27 +213,15 @@
     .store-item-title {
       font-size: 15px;
       font-weight: 700;
-      margin-bottom: 6px;
-    }
-
-    .store-item-address {
-      font-size: 13px;
-      color: #555;
-      line-height: 1.4;
-      margin-bottom: 4px;
-    }
-
-    .store-item-detail-address {
-      font-size: 12px;
-      color: #777;
-      line-height: 1.4;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .store-item-meta {
       font-size: 12px;
       color: #666;
-      line-height: 1.5;
+      line-height: 1.6;
+      margin-bottom: 4px;
+      word-break: keep-all;
     }
 
     .map-wrap {
@@ -268,7 +256,7 @@
     .top-buttons {
       position: absolute;
       top: 20px;
-      right: 20px;
+      left: 80px;
       display: flex;
       gap: 12px;
       z-index: 20;
@@ -450,7 +438,7 @@
 
       .top-buttons {
         top: 12px;
-        right: 12px;
+        left: 60px;
         gap: 6px;
       }
 
@@ -478,8 +466,6 @@
 
       .store-item-title { font-size: 14px; }
 
-      .store-item-address,
-      .store-item-detail-address,
       .store-item-meta,
       .selected-store .row,
       .route-row {
@@ -502,14 +488,14 @@
         <h1 class="sidebar-title">매장 지도</h1>
 
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="매장명 / 브랜드 / 주소 / 상세주소 검색" />
+          <input type="text" id="searchInput" placeholder="매장명 / 확인용 / 주소 / 상세주소 검색" />
           <button type="button" onclick="applyFilters()">검색</button>
         </div>
 
         <div class="filter-grid">
           <div class="filter-box">
             <select id="brandFilter" onchange="applyFilters()">
-              <option value="">전체 브랜드</option>
+              <option value="">전체 확인용</option>
             </select>
           </div>
           <div class="filter-box">
@@ -566,9 +552,7 @@
     </div>
   </div>
 
-  <!-- 카카오맵 JS SDK -->
   <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=ca5353f84284c3cb5778577cb87e4f57&libraries=services"></script>
-  <!-- 카카오 JS SDK -->
   <script src="https://developers.kakao.com/sdk/js/kakao.min.js"></script>
 
   <script>
@@ -576,7 +560,6 @@
       Kakao.init("ca5353f84284c3cb5778577cb87e4f57");
     }
 
-    // 여기에 본인 Apps Script 웹앱 URL 넣기
     const SHEET_API_URL = "https://script.google.com/macros/s/AKfycby_lQQu8_RG3jN6oJ0ikIIUS8_rm-6Z6HcuYtx0uSDvPvitBmCvJiXR6ZsPmPaU5ck_/exec";
 
     let stores = [];
@@ -614,9 +597,9 @@
 
     const defaultMarkerImage = new kakao.maps.MarkerImage(
       "https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/marker_red.png",
-      new kakao.maps.Size(64, 69),
+      new kakao.maps.Size(32, 35),
       {
-        offset: new kakao.maps.Point(27, 69)
+        offset: new kakao.maps.Point(16, 35)
       }
     );
 
@@ -687,7 +670,7 @@
       if (keyword) {
         results = results.filter(store => {
           const text = normalizeText(
-            `${store.name} ${store.brand} ${store.address} ${store.detail_address} ${store.region} ${store.note}`
+            `${store.name} ${store.brand} ${store.address} ${store.detail_address} ${store.region} ${store.note} ${store.operating_hours} ${store.phone}`
           );
           return text.includes(keyword);
         });
@@ -722,7 +705,7 @@
         }).map(store => store.region)
       );
 
-      brandFilter.innerHTML = '<option value="">전체 브랜드</option>';
+      brandFilter.innerHTML = '<option value="">전체 확인용</option>';
       regionFilter.innerHTML = '<option value="">전체 지역</option>';
 
       brands.forEach(value => brandFilter.appendChild(new Option(value, value)));
@@ -750,10 +733,10 @@
 
       box.innerHTML = `
         <h2>${store.name}</h2>
-        <div class="row"><span class="label">브랜드</span>${store.brand || "-"}</div>
         <div class="row"><span class="label">지역</span>${store.region || "-"}</div>
         <div class="row"><span class="label">주소</span>${store.address || "-"}</div>
         <div class="row"><span class="label">상세주소</span>${store.detail_address || "-"}</div>
+        <div class="row"><span class="label">운영시간</span>${store.operating_hours || "-"}</div>
         <div class="row"><span class="label">전화</span>${store.phone || "-"}</div>
         <div class="row"><span class="label">비고</span>${store.note || "-"}</div>
         <div class="selected-actions">
@@ -797,11 +780,12 @@
 
         div.innerHTML = `
           <div class="store-item-title">${store.name}</div>
-          <div class="store-item-address">${store.address || "-"}</div>
-          <div class="store-item-detail-address">${store.detail_address || ""}</div>
-          <div class="store-item-meta">
-            브랜드: ${store.brand || "-"} / 지역: ${store.region || "-"}
-          </div>
+          <div class="store-item-meta">지역: ${store.region || "-"}</div>
+          <div class="store-item-meta">주소: ${store.address || "-"}</div>
+          <div class="store-item-meta">상세주소: ${store.detail_address || "-"}</div>
+          <div class="store-item-meta">운영시간: ${store.operating_hours || "-"}</div>
+          <div class="store-item-meta">전화: ${store.phone || "-"}</div>
+          <div class="store-item-meta">비고: ${store.note || "-"}</div>
         `;
 
         div.addEventListener("click", function() {
@@ -886,10 +870,10 @@
       return `
         <div class="info-box">
           <h3>${store.name}</h3>
-          <div><strong>브랜드</strong> <span>${store.brand || "-"}</span></div>
           <div><strong>지역</strong> <span>${region || "-"}</span></div>
           <div><strong>주소</strong> <span>${store.address || "-"}</span></div>
           <div><strong>상세주소</strong> <span>${store.detail_address || "-"}</span></div>
+          <div><strong>운영시간</strong> <span>${store.operating_hours || "-"}</span></div>
           <div><strong>전화</strong> <span>${store.phone || "-"}</span></div>
           <div><strong>비고</strong> <span>${store.note || "-"}</span></div>
         </div>
@@ -1255,6 +1239,7 @@
         stores = Array.isArray(data) ? data.map(store => ({
           ...store,
           detail_address: store.detail_address ?? "",
+          operating_hours: store.operating_hours ?? store.hours ?? store.business_hours ?? "",
           lat: store.lat ?? store.latitude ?? "",
           lng: store.lng ?? store.longitude ?? ""
         })) : [];
