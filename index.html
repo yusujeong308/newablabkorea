@@ -431,13 +431,16 @@
       flex-shrink: 0;
     }
 
-    .marker-green { background: #2f9e44; }
-    .marker-yellow { background: #f08c00; }
-    .marker-red { background: #e03131; }
-    .marker-blue { background: #1c7ed6; }
-    .marker-gray { background: #ced4da; }
-    .marker-purple { background: #7950f2; }
-    .marker-brown { background: #8b5e3c; }
+    .marker-green { background: #2b8a3e; }
+    .marker-blue { background: #1864ab; }
+    .marker-orange { background: #e67700; }
+    .marker-soft-gray { background: #adb5bd; }
+    .marker-light-gray { background: #e9ecef; }
+
+    .marker-open { background: #2f9e44; }
+    .marker-break { background: #f08c00; }
+    .marker-closed { background: #ced4da; }
+    .marker-empty { background: #8b5e3c; }
 
     .marker-legend-toggle {
       position: absolute;
@@ -654,7 +657,7 @@
         <h1 class="sidebar-title">매장 지도</h1>
 
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="매장명 / 확인용 / 주소 / 상세주소 검색" />
+          <input type="text" id="searchInput" placeholder="매장명 / 1. / 2. / 3. / 미방문 / 기타 / 주소 검색" />
           <button type="button" onclick="applyFilters()">검색</button>
         </div>
 
@@ -772,6 +775,7 @@
 
     let relayoutTimer = null;
     let markersBuildTaskId = 0;
+    let statusRefreshTimer = null;
 
     let currentPinMode = "check";
 
@@ -815,13 +819,14 @@
     function getCheckPinColor(type) {
       const value = String(type || "").trim();
 
-      if (!value) return "#7950f2";
-      if (value === "완료") return "#2f9e44";
-      if (value === "확인필요") return "#f08c00";
-      if (value === "미방문") return "#e03131";
-      if (value === "기타") return "#1c7ed6";
+      if (value === "1.") return "#2b8a3e";
+      if (value === "2.") return "#1864ab";
+      if (value === "3.") return "#e67700";
+      if (value === "미방문") return "#adb5bd";
+      if (value === "기타") return "#e9ecef";
+      if (!value) return "#e9ecef";
 
-      return "#1c7ed6";
+      return "#1864ab";
     }
 
     function parseTimeRange(text) {
@@ -924,11 +929,6 @@
       };
     }
 
-    function isStoreOpen(store) {
-      const statusInfo = getStoreStatus(store);
-      return statusInfo.status === "운영중";
-    }
-
     function getOpenStatusPinColor(store) {
       const statusInfo = getStoreStatus(store);
 
@@ -950,12 +950,15 @@
       }
 
       const value = String(store.brand || "").trim();
-      if (value === "미방문") return 0;
-      if (value === "확인필요") return 1;
-      if (value === "완료") return 2;
-      if (value === "기타") return 3;
-      if (!value) return 4;
-      return 3;
+
+      if (value === "기타") return 0;
+      if (value === "미방문") return 1;
+      if (value === "3.") return 2;
+      if (value === "2.") return 3;
+      if (value === "1.") return 4;
+      if (!value) return 0;
+
+      return 2;
     }
 
     function getMarkerImage(store) {
@@ -1023,19 +1026,19 @@
         titleEl.textContent = "운영상태 핀 안내";
         listEl.innerHTML = `
           <div class="marker-legend-item">
-            <span class="marker-dot marker-green"></span>
+            <span class="marker-dot marker-open"></span>
             <span>운영중</span>
           </div>
           <div class="marker-legend-item">
-            <span class="marker-dot marker-yellow"></span>
+            <span class="marker-dot marker-break"></span>
             <span>브레이크타임</span>
           </div>
           <div class="marker-legend-item">
-            <span class="marker-dot marker-gray"></span>
+            <span class="marker-dot marker-closed"></span>
             <span>운영종료</span>
           </div>
           <div class="marker-legend-item">
-            <span class="marker-dot marker-brown"></span>
+            <span class="marker-dot marker-empty"></span>
             <span>운영정보 없음</span>
           </div>
         `;
@@ -1044,23 +1047,23 @@
         listEl.innerHTML = `
           <div class="marker-legend-item">
             <span class="marker-dot marker-green"></span>
-            <span>완료</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-yellow"></span>
-            <span>확인필요</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-red"></span>
-            <span>미방문</span>
+            <span>1.</span>
           </div>
           <div class="marker-legend-item">
             <span class="marker-dot marker-blue"></span>
-            <span>기타</span>
+            <span>2.</span>
           </div>
           <div class="marker-legend-item">
-            <span class="marker-dot marker-purple"></span>
-            <span>빈칸</span>
+            <span class="marker-dot marker-orange"></span>
+            <span>3.</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot marker-soft-gray"></span>
+            <span>미방문</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot marker-light-gray"></span>
+            <span>기타</span>
           </div>
         `;
       }
@@ -1364,7 +1367,7 @@
       }
     }
 
-    function createInfoWindowContent(store, region) {
+    function createInfoWindowContent(store) {
       const statusInfo = getStoreStatus(store);
 
       return `
@@ -1388,11 +1391,11 @@
 
       if (!store.infowindow) {
         store.infowindow = new kakao.maps.InfoWindow({
-          content: createInfoWindowContent(store, store.region),
+          content: createInfoWindowContent(store),
           removable: true
         });
       } else {
-        store.infowindow.setContent(createInfoWindowContent(store, store.region));
+        store.infowindow.setContent(createInfoWindowContent(store));
       }
 
       closeAllInfoWindows();
@@ -1735,6 +1738,66 @@
       buildMarkersInChunks(validStores, 40);
     }
 
+    function refreshLiveStoreStatus() {
+      if (!stores || stores.length === 0) return;
+
+      const currentFilters = getCurrentFilterValues();
+      const hasFilter =
+        !!currentFilters.keyword ||
+        !!currentFilters.brand ||
+        !!currentFilters.region ||
+        !!currentFilters.openFilter;
+
+      const currentResults = hasFilter
+        ? getFilteredMarkerStores(currentFilters)
+        : storeMarkers;
+
+      if (currentPinMode === "open") {
+        refreshMarkerImages();
+      }
+
+      if (currentFilters.openFilter) {
+        updateMarkers(currentResults, false);
+
+        if (currentResults.length === 0) {
+          selectedStoreName = null;
+          document.getElementById("storeList").innerHTML = "";
+          renderNoResultMessage();
+        }
+      }
+
+      renderStoreList(currentResults);
+
+      const selected = getSelectedStoreData();
+      if (selected) {
+        renderSelectedStore(selected);
+
+        if (selected.infowindow && openedInfowindow === selected.infowindow) {
+          selected.infowindow.setContent(createInfoWindowContent(selected));
+        }
+      } else {
+        if (!hasFilter) {
+          renderDefaultMessage();
+        } else if (currentResults.length === 0) {
+          renderNoResultMessage();
+        } else {
+          renderResultMessage(currentResults);
+        }
+      }
+    }
+
+    function startLiveStatusRefresh() {
+      if (statusRefreshTimer) {
+        clearInterval(statusRefreshTimer);
+      }
+
+      refreshLiveStoreStatus();
+
+      statusRefreshTimer = setInterval(() => {
+        refreshLiveStoreStatus();
+      }, 60000);
+    }
+
     async function loadStoresFromSheet() {
       if (!SHEET_API_URL) {
         alert("SHEET_API_URL을 먼저 입력해 주세요.");
@@ -1756,6 +1819,7 @@
         })) : [];
 
         initializeStores();
+        startLiveStatusRefresh();
       } catch (error) {
         console.error("매장 데이터 불러오기 실패:", error);
         alert("구글시트 매장 데이터를 불러오지 못했습니다.");
@@ -1852,7 +1916,10 @@
     });
 
     document.addEventListener("visibilitychange", function() {
-      if (!document.hidden) relayoutMapSafely();
+      if (!document.hidden) {
+        relayoutMapSafely();
+        refreshLiveStoreStatus();
+      }
     });
 
     loadStoresFromSheet();
