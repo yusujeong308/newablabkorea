@@ -278,10 +278,7 @@
       white-space: nowrap;
     }
 
-    .roadview-pick-btn.active {
-      background: #0b63ce;
-    }
-
+    .roadview-pick-btn.active,
     .pin-mode-btn.active {
       background: #0b63ce;
     }
@@ -556,7 +553,6 @@
         top: 12px;
         left: 12px;
         right: auto;
-        bottom: auto;
         display: flex;
         flex-direction: column;
         gap: 6px;
@@ -581,10 +577,10 @@
 
       .sidebar-toggle {
         position: absolute;
-        top: auto;
-        left: auto;
         right: 12px;
         bottom: 12px;
+        left: auto;
+        top: auto;
         padding: 7px 9px;
         font-size: 11px;
         min-width: 72px;
@@ -724,14 +720,7 @@
         <div class="marker-legend-list" id="markerLegendList"></div>
       </div>
 
-      <button
-        type="button"
-        id="markerLegendToggle"
-        class="marker-legend-toggle"
-        onclick="toggleMarkerLegend()"
-      >
-        핀
-      </button>
+      <button type="button" id="markerLegendToggle" class="marker-legend-toggle" onclick="toggleMarkerLegend()">핀</button>
 
       <div id="map"></div>
 
@@ -810,9 +799,7 @@
       return new kakao.maps.MarkerImage(
         imageSrc,
         new kakao.maps.Size(32, 35),
-        {
-          offset: new kakao.maps.Point(16, 35)
-        }
+        { offset: new kakao.maps.Point(16, 35) }
       );
     }
 
@@ -823,8 +810,7 @@
       if (value === "2.") return "#1864ab";
       if (value === "3.") return "#e67700";
       if (value === "미방문") return "#adb5bd";
-      if (value === "기타") return "#e9ecef";
-      if (!value) return "#e9ecef";
+      if (value === "기타" || !value) return "#e9ecef";
 
       return "#1864ab";
     }
@@ -845,7 +831,6 @@
 
     function formatRemainTime(minutes) {
       const safeMinutes = Math.max(0, Math.floor(minutes));
-
       if (safeMinutes <= 0) return "곧";
 
       const h = Math.floor(safeMinutes / 60);
@@ -874,37 +859,22 @@
       const breakTime = String(store.break_time || "").trim();
 
       if (!operatingDays || !operatingHours) {
-        return {
-          status: "정보없음",
-          message: "운영 정보 없음"
-        };
+        return { status: "정보없음", message: "운영 정보 없음" };
       }
 
-      const validDays = operatingDays
-        .split(",")
-        .map(v => v.trim())
-        .filter(Boolean);
-
+      const validDays = operatingDays.split(",").map(v => v.trim()).filter(Boolean);
       const range = parseTimeRange(operatingHours);
+
       if (!range) {
-        return {
-          status: "정보없음",
-          message: "운영 정보 없음"
-        };
+        return { status: "정보없음", message: "운영 정보 없음" };
       }
 
       if (!validDays.includes(today)) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
+        return { status: "미운영", message: "운영 종료" };
       }
 
       if (nowMinutes < range.start || nowMinutes > range.end) {
-        return {
-          status: "미운영",
-          message: "운영 종료"
-        };
+        return { status: "미운영", message: "운영 종료" };
       }
 
       const breakRange = breakTime ? parseTimeRange(breakTime) : null;
@@ -930,18 +900,16 @@
     }
 
     function getOpenStatusPinColor(store) {
-      const statusInfo = getStoreStatus(store);
-
-      if (statusInfo.status === "운영중") return "#2f9e44";
-      if (statusInfo.status === "브레이크타임") return "#f08c00";
-      if (statusInfo.status === "미운영") return "#ced4da";
+      const status = getStoreStatus(store).status;
+      if (status === "운영중") return "#2f9e44";
+      if (status === "브레이크타임") return "#f08c00";
+      if (status === "미운영") return "#ced4da";
       return "#8b5e3c";
     }
 
     function getPinPriority(store) {
       if (currentPinMode === "open") {
         const status = getStoreStatus(store).status;
-
         if (status === "정보없음") return 0;
         if (status === "미운영") return 1;
         if (status === "브레이크타임") return 2;
@@ -950,22 +918,18 @@
       }
 
       const value = String(store.brand || "").trim();
-
-      if (value === "기타") return 0;
+      if (value === "기타" || !value) return 0;
       if (value === "미방문") return 1;
       if (value === "3.") return 2;
       if (value === "2.") return 3;
       if (value === "1.") return 4;
-      if (!value) return 0;
-
       return 2;
     }
 
     function getMarkerImage(store) {
-      if (currentPinMode === "open") {
-        return makeMarkerImage(getOpenStatusPinColor(store));
-      }
-      return makeMarkerImage(getCheckPinColor(store.brand));
+      return currentPinMode === "open"
+        ? makeMarkerImage(getOpenStatusPinColor(store))
+        : makeMarkerImage(getCheckPinColor(store.brand));
     }
 
     function normalizeText(text) {
@@ -1012,9 +976,7 @@
 
     function relayoutMapSafely() {
       clearTimeout(relayoutTimer);
-      relayoutTimer = setTimeout(() => {
-        map.relayout();
-      }, 120);
+      relayoutTimer = setTimeout(() => map.relayout(), 120);
     }
 
     function renderMarkerLegend() {
@@ -1025,46 +987,19 @@
       if (currentPinMode === "open") {
         titleEl.textContent = "운영상태 핀 안내";
         listEl.innerHTML = `
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-open"></span>
-            <span>운영중</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-break"></span>
-            <span>브레이크타임</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-closed"></span>
-            <span>운영종료</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-empty"></span>
-            <span>운영정보 없음</span>
-          </div>
+          <div class="marker-legend-item"><span class="marker-dot marker-open"></span><span>운영중</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-break"></span><span>브레이크타임</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-closed"></span><span>운영종료</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-empty"></span><span>운영정보 없음</span></div>
         `;
       } else {
         titleEl.textContent = "확인용 핀 안내";
         listEl.innerHTML = `
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-green"></span>
-            <span>1.</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-blue"></span>
-            <span>2.</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-orange"></span>
-            <span>3.</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-soft-gray"></span>
-            <span>미방문</span>
-          </div>
-          <div class="marker-legend-item">
-            <span class="marker-dot marker-light-gray"></span>
-            <span>기타</span>
-          </div>
+          <div class="marker-legend-item"><span class="marker-dot marker-green"></span><span>1.</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-blue"></span><span>2.</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-orange"></span><span>3.</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-soft-gray"></span><span>미방문</span></div>
+          <div class="marker-legend-item"><span class="marker-dot marker-light-gray"></span><span>기타</span></div>
         `;
       }
     }
@@ -1072,11 +1007,9 @@
     function toggleMarkerLegend() {
       const legend = document.getElementById("markerLegend");
       const toggleBtn = document.getElementById("markerLegendToggle");
-
       if (!legend || !toggleBtn) return;
 
       const isHidden = legend.classList.contains("hidden");
-
       if (isHidden) {
         renderMarkerLegend();
         legend.classList.remove("hidden");
@@ -1089,14 +1022,12 @@
 
     function refreshMarkerImages() {
       const orderedStores = [...storeMarkers].sort((a, b) => getPinPriority(a) - getPinPriority(b));
-
       orderedStores.forEach(store => {
-        if (store.marker) {
-          const isVisible = !!store.marker.getMap();
-          store.marker.setMap(null);
-          store.marker.setImage(getMarkerImage(store));
-          store.marker.setMap(isVisible ? map : null);
-        }
+        if (!store.marker) return;
+        const visible = !!store.marker.getMap();
+        store.marker.setMap(null);
+        store.marker.setImage(getMarkerImage(store));
+        store.marker.setMap(visible ? map : null);
       });
     }
 
@@ -1172,7 +1103,6 @@
     function renderFilterOptions() {
       const brandFilter = document.getElementById("brandFilter");
       const regionFilter = document.getElementById("regionFilter");
-
       const current = getCurrentFilterValues();
 
       const brands = createUniqueOptions(
@@ -1274,7 +1204,6 @@
 
         const div = document.createElement("div");
         div.className = "store-item" + (selectedStoreName === store.name ? " active" : "");
-
         div.innerHTML = `
           <div class="store-item-title">${store.name}</div>
           <div class="store-item-meta">지역: ${store.region || "-"}</div>
@@ -1288,11 +1217,7 @@
           <div class="store-item-meta">안내: ${statusInfo.message}</div>
           <div class="store-item-meta">비고: ${store.note || "-"}</div>
         `;
-
-        div.addEventListener("click", function() {
-          selectStore(store);
-        });
-
+        div.addEventListener("click", function() { selectStore(store); });
         fragment.appendChild(div);
       });
 
@@ -1308,9 +1233,7 @@
         if (visible) bounds.extend(store.coords);
       });
 
-      if (results.length > 0 && shouldFitBounds) {
-        map.setBounds(bounds);
-      }
+      if (results.length > 0 && shouldFitBounds) map.setBounds(bounds);
     }
 
     function closeOpenedInfowindow() {
@@ -1335,10 +1258,7 @@
       if (!isMobileDevice()) return Promise.resolve();
 
       return new Promise(resolve => {
-        mapWrapEl.scrollIntoView({
-          behavior: "smooth",
-          block: "start"
-        });
+        mapWrapEl.scrollIntoView({ behavior: "smooth", block: "start" });
         setTimeout(resolve, 320);
       });
     }
@@ -1359,8 +1279,7 @@
 
       if (isMobileDevice()) {
         map.setLevel(4);
-        const movedCenter = getOffsetCenter(store.coords, 120);
-        map.setCenter(movedCenter);
+        map.setCenter(getOffsetCenter(store.coords, 120));
       } else {
         map.setLevel(3);
         map.setCenter(store.coords);
@@ -1418,33 +1337,24 @@
       renderStoreList(currentResults);
 
       closeOpenedInfowindow();
-
       await scrollMapIntoView();
 
       setTimeout(() => {
         moveMapToStore(store);
-        setTimeout(() => {
-          openStoreInfo(store);
-        }, 120);
+        setTimeout(() => openStoreInfo(store), 120);
       }, 40);
     }
 
     function setSelectedAsStart() {
       const selectedStore = getSelectedStoreData();
-      if (!selectedStore) {
-        alert("먼저 매장을 선택해 주세요.");
-        return;
-      }
+      if (!selectedStore) return alert("먼저 매장을 선택해 주세요.");
       routeStartStore = selectedStore;
       renderRouteInfo();
     }
 
     function setSelectedAsEnd() {
       const selectedStore = getSelectedStoreData();
-      if (!selectedStore) {
-        alert("먼저 매장을 선택해 주세요.");
-        return;
-      }
+      if (!selectedStore) return alert("먼저 매장을 선택해 주세요.");
       routeEndStore = selectedStore;
       renderRouteInfo();
     }
@@ -1457,8 +1367,7 @@
 
     function applyFilters() {
       if (storeMarkers.length === 0) {
-        alert("매장 정보를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
-        return;
+        return alert("매장 정보를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
       }
 
       renderFilterOptions();
@@ -1519,19 +1428,14 @@
       const title = document.getElementById("roadviewTitle");
 
       roadviewClient.getNearestPanoId(position, 50, function(panoId) {
-        if (!panoId) {
-          alert("이 위치 근처에는 로드뷰가 없습니다.");
-          return;
-        }
+        if (!panoId) return alert("이 위치 근처에는 로드뷰가 없습니다.");
 
         title.textContent = titleText;
         wrap.classList.add("open");
         toggleBtn.textContent = "로드뷰 닫기";
         roadview.setPanoId(panoId, position);
 
-        setTimeout(() => {
-          roadview.relayout();
-        }, 100);
+        setTimeout(() => roadview.relayout(), 100);
       });
     }
 
@@ -1549,17 +1453,10 @@
 
     function toggleRoadviewPanel() {
       const wrap = document.getElementById("roadviewWrap");
-
-      if (wrap.classList.contains("open")) {
-        closeRoadviewPanel();
-        return;
-      }
+      if (wrap.classList.contains("open")) return closeRoadviewPanel();
 
       const selectedStore = getSelectedStoreData();
-      if (!selectedStore) {
-        alert("먼저 매장을 선택해 주세요.");
-        return;
-      }
+      if (!selectedStore) return alert("먼저 매장을 선택해 주세요.");
 
       openRoadviewForStore(selectedStore);
     }
@@ -1572,9 +1469,7 @@
       wrap.classList.toggle("expanded", isRoadviewExpanded);
       expandBtn.textContent = isRoadviewExpanded ? "작게 보기" : "크게 보기";
 
-      setTimeout(() => {
-        roadview.relayout();
-      }, 200);
+      setTimeout(() => roadview.relayout(), 200);
     }
 
     function createRoadviewPickerOverlay() {
@@ -1616,18 +1511,11 @@
       button.textContent = "찍기";
 
       map.removeOverlayMapTypeId(kakao.maps.MapTypeId.ROADVIEW);
-
-      if (roadviewPickerOverlay) {
-        roadviewPickerOverlay.setMap(null);
-      }
+      if (roadviewPickerOverlay) roadviewPickerOverlay.setMap(null);
     }
 
     function toggleRoadviewPickMode() {
-      if (isRoadviewPickMode) {
-        stopRoadviewPickMode();
-      } else {
-        startRoadviewPickMode();
-      }
+      isRoadviewPickMode ? stopRoadviewPickMode() : startRoadviewPickMode();
     }
 
     function resetMapData() {
@@ -1696,7 +1584,6 @@
         if (taskId !== markersBuildTaskId) return;
 
         const end = Math.min(index + chunkSize, validStores.length);
-
         for (let i = index; i < end; i++) {
           const store = validStores[i];
           const coords = new kakao.maps.LatLng(Number(store.lat), Number(store.lng));
@@ -1739,30 +1626,22 @@
     }
 
     function refreshLiveStoreStatus() {
-      if (!stores || stores.length === 0) return;
+      if (!stores.length) return;
 
       const currentFilters = getCurrentFilterValues();
-      const hasFilter =
-        !!currentFilters.keyword ||
-        !!currentFilters.brand ||
-        !!currentFilters.region ||
-        !!currentFilters.openFilter;
+      const hasFilter = !!currentFilters.keyword || !!currentFilters.brand || !!currentFilters.region || !!currentFilters.openFilter;
 
-      const currentResults = hasFilter
-        ? getFilteredMarkerStores(currentFilters)
-        : storeMarkers;
+      const currentResults = hasFilter ? getFilteredMarkerStores(currentFilters) : storeMarkers;
 
-      if (currentPinMode === "open") {
-        refreshMarkerImages();
-      }
+      if (currentPinMode === "open") refreshMarkerImages();
 
       if (currentFilters.openFilter) {
         updateMarkers(currentResults, false);
-
         if (currentResults.length === 0) {
           selectedStoreName = null;
           document.getElementById("storeList").innerHTML = "";
           renderNoResultMessage();
+          return;
         }
       }
 
@@ -1771,38 +1650,22 @@
       const selected = getSelectedStoreData();
       if (selected) {
         renderSelectedStore(selected);
-
         if (selected.infowindow && openedInfowindow === selected.infowindow) {
           selected.infowindow.setContent(createInfoWindowContent(selected));
         }
       } else {
-        if (!hasFilter) {
-          renderDefaultMessage();
-        } else if (currentResults.length === 0) {
-          renderNoResultMessage();
-        } else {
-          renderResultMessage(currentResults);
-        }
+        if (!hasFilter) renderDefaultMessage();
       }
     }
 
     function startLiveStatusRefresh() {
-      if (statusRefreshTimer) {
-        clearInterval(statusRefreshTimer);
-      }
-
+      if (statusRefreshTimer) clearInterval(statusRefreshTimer);
       refreshLiveStoreStatus();
-
-      statusRefreshTimer = setInterval(() => {
-        refreshLiveStoreStatus();
-      }, 60000);
+      statusRefreshTimer = setInterval(refreshLiveStoreStatus, 60000);
     }
 
     async function loadStoresFromSheet() {
-      if (!SHEET_API_URL) {
-        alert("SHEET_API_URL을 먼저 입력해 주세요.");
-        return;
-      }
+      if (!SHEET_API_URL) return alert("SHEET_API_URL을 먼저 입력해 주세요.");
 
       try {
         const response = await fetch(SHEET_API_URL, { cache: "no-store" });
@@ -1828,55 +1691,46 @@
 
     function startNavigationFromRoute() {
       const destinationStore = routeEndStore || getSelectedStoreData();
+      if (!destinationStore) return alert("도착지로 사용할 매장을 먼저 선택하거나 설정해 주세요.");
 
-      if (!destinationStore) {
-        alert("도착지로 사용할 매장을 먼저 선택하거나 설정해 주세요.");
-        return;
-      }
-
-      if (!window.Kakao) {
-        alert("카카오 SDK가 로드되지 않았습니다.");
-        return;
-      }
+      if (!window.Kakao) return alert("카카오 SDK가 로드되지 않았습니다.");
 
       if (!Kakao.isInitialized()) {
         try {
           Kakao.init("여기에_카카오_자바스크립트키");
         } catch (error) {
           console.error(error);
-          alert("카카오 SDK 초기화에 실패했습니다.");
-          return;
+          return alert("카카오 SDK 초기화에 실패했습니다.");
         }
       }
 
       if (!Kakao.Navi || typeof Kakao.Navi.start !== "function") {
-        alert("카카오내비 기능을 사용할 수 없습니다. SDK 설정을 확인해 주세요.");
-        return;
+        return alert("카카오내비 기능을 사용할 수 없습니다. SDK 설정을 확인해 주세요.");
       }
 
-      if (isMobileDevice()) {
-        const naviOptions = {
-          name: destinationStore.name,
-          x: Number(destinationStore.coords.getLng()),
-          y: Number(destinationStore.coords.getLat()),
-          coordType: "wgs84",
-          vehicleType: 1,
-          rpOption: 100
-        };
+      if (!isMobileDevice()) {
+        return alert("카카오내비 길찾기는 모바일에서만 실행됩니다.");
+      }
 
-        if (routeStartStore) {
-          naviOptions.sX = Number(routeStartStore.coords.getLng());
-          naviOptions.sY = Number(routeStartStore.coords.getLat());
-        }
+      const naviOptions = {
+        name: destinationStore.name,
+        x: Number(destinationStore.coords.getLng()),
+        y: Number(destinationStore.coords.getLat()),
+        coordType: "wgs84",
+        vehicleType: 1,
+        rpOption: 100
+      };
 
-        try {
-          Kakao.Navi.start(naviOptions);
-        } catch (error) {
-          console.error("Kakao.Navi.start error:", error);
-          alert("카카오내비 실행에 실패했습니다. 카카오 디벨로퍼스에 현재 접속 도메인이 등록되어 있는지 확인해 주세요.");
-        }
-      } else {
-        alert("카카오내비 길찾기는 모바일에서만 실행됩니다.");
+      if (routeStartStore) {
+        naviOptions.sX = Number(routeStartStore.coords.getLng());
+        naviOptions.sY = Number(routeStartStore.coords.getLat());
+      }
+
+      try {
+        Kakao.Navi.start(naviOptions);
+      } catch (error) {
+        console.error("Kakao.Navi.start error:", error);
+        alert("카카오내비 실행에 실패했습니다. 카카오 디벨로퍼스에 현재 접속 도메인이 등록되어 있는지 확인해 주세요.");
       }
     }
 
@@ -1903,17 +1757,9 @@
       if (event.key === "Enter") applyFilters();
     });
 
-    window.addEventListener("load", function() {
-      relayoutMapSafely();
-    });
-
-    window.addEventListener("resize", function() {
-      relayoutMapSafely();
-    });
-
-    window.addEventListener("orientationchange", function() {
-      relayoutMapSafely();
-    });
+    window.addEventListener("load", relayoutMapSafely);
+    window.addEventListener("resize", relayoutMapSafely);
+    window.addEventListener("orientationchange", relayoutMapSafely);
 
     document.addEventListener("visibilitychange", function() {
       if (!document.hidden) {
