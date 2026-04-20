@@ -1359,6 +1359,11 @@
       if (!document.hidden) relayoutMapSafely();
     });
 
+    fetch(SHEET_API_URL)
+  .then(r => r.text())
+  .then(t => console.log(t))
+  .catch(e => console.error("fetch error:", e));
+    
     loadStoresFromSheet();
   </script>
 </body>
