@@ -344,10 +344,12 @@
 
     .info-box {
       padding: 16px;
+      padding-right: 42px;
       width: 360px;
       line-height: 1.8;
       font-size: 14px;
       word-break: keep-all;
+      position: relative;
     }
 
     .info-box h3 {
@@ -359,6 +361,27 @@
       display: inline-block;
       width: 70px;
       vertical-align: top;
+    }
+
+    .info-window-close {
+      position: absolute;
+      top: 10px;
+      right: 12px;
+      width: 24px;
+      height: 24px;
+      border: none;
+      background: transparent;
+      color: #666;
+      font-size: 18px;
+      line-height: 24px;
+      text-align: center;
+      cursor: pointer;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    .info-window-close:hover {
+      color: #111;
     }
 
     .roadview-picker-pin {
@@ -529,6 +552,7 @@
       .info-box {
         width: 240px;
         padding: 10px;
+        padding-right: 34px;
         font-size: 12px;
         line-height: 1.6;
       }
@@ -539,6 +563,15 @@
       }
 
       .info-box strong { width: 54px; }
+
+      .info-window-close {
+        top: 8px;
+        right: 8px;
+        width: 22px;
+        height: 22px;
+        font-size: 16px;
+        line-height: 22px;
+      }
 
       .search-box {
         display: grid;
@@ -791,52 +824,52 @@
     const roadviewClient = new kakao.maps.RoadviewClient();
 
     function createMarkerSvg(color) {
-  return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="22" height="32" viewBox="0 0 28 40" fill="none">
-      <path d="M14 1.5C7.096 1.5 1.5 7.096 1.5 14c0 9.646 10.404 20.182 11.818 21.57a1 1 0 0 0 1.364 0C16.096 34.182 26.5 23.646 26.5 14 26.5 7.096 20.904 1.5 14 1.5Z" fill="${color}" stroke="#FFFFFF" stroke-width="2"/>
-      <circle cx="14" cy="14" r="5.2" fill="#FFFFFF" fill-opacity="0.96"/>
-    </svg>
-  `.trim();
-}
-
-function makeMarkerImage(color) {
-  const svg = createMarkerSvg(color);
-  const imageSrc = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-  return new kakao.maps.MarkerImage(
-    imageSrc,
-    new kakao.maps.Size(22, 32),
-    {
-      offset: new kakao.maps.Point(11, 32)
+      return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="32" viewBox="0 0 28 40" fill="none">
+          <path d="M14 1.5C7.096 1.5 1.5 7.096 1.5 14c0 9.646 10.404 20.182 11.818 21.57a1 1 0 0 0 1.364 0C16.096 34.182 26.5 23.646 26.5 14 26.5 7.096 20.904 1.5 14 1.5Z" fill="${color}" stroke="#FFFFFF" stroke-width="2"/>
+          <circle cx="14" cy="14" r="5.2" fill="#FFFFFF" fill-opacity="0.96"/>
+        </svg>
+      `.trim();
     }
-  );
-}
 
-const checkMarkerColors = {
-  done: "#2f9e44",
-  needCheck: "#1c7ed6",
-  notVisited: "#f08c00",
-  other: "#7950f2",
-  empty: "#ced4da"
-};
+    function makeMarkerImage(color) {
+      const svg = createMarkerSvg(color);
+      const imageSrc = "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+      return new kakao.maps.MarkerImage(
+        imageSrc,
+        new kakao.maps.Size(22, 32),
+        {
+          offset: new kakao.maps.Point(11, 32)
+        }
+      );
+    }
 
-const statusMarkerColors = {
-  open: "#2f9e44",
-  break: "#f08c00",
-  closed: "#868e96",
-  empty: "#8b5e3c"
-};
+    const checkMarkerColors = {
+      done: "#2f9e44",
+      needCheck: "#1c7ed6",
+      notVisited: "#f08c00",
+      other: "#7950f2",
+      empty: "#ced4da"
+    };
 
-function getCheckPinColor(type) {
-  const value = String(type || "").trim();
+    const statusMarkerColors = {
+      open: "#2f9e44",
+      break: "#f08c00",
+      closed: "#868e96",
+      empty: "#8b5e3c"
+    };
 
-  if (!value) return checkMarkerColors.empty;
-  if (value === "1팀") return checkMarkerColors.done;
-  if (value === "2팀") return checkMarkerColors.needCheck;
-  if (value === "3") return checkMarkerColors.notVisited;
-  if (value === "기타") return checkMarkerColors.other;
+    function getCheckPinColor(type) {
+      const value = String(type || "").trim();
 
-  return checkMarkerColors.other;
-}
+      if (!value) return checkMarkerColors.empty;
+      if (value === "1팀") return checkMarkerColors.done;
+      if (value === "2팀") return checkMarkerColors.needCheck;
+      if (value === "3") return checkMarkerColors.notVisited;
+      if (value === "기타") return checkMarkerColors.other;
+
+      return checkMarkerColors.other;
+    }
 
     function parseTimeRange(text) {
       const value = String(text || "").trim();
@@ -944,13 +977,13 @@ function getCheckPinColor(type) {
     }
 
     function getOpenStatusPinColor(store) {
-  const statusInfo = getStoreStatus(store);
+      const statusInfo = getStoreStatus(store);
 
-  if (statusInfo.status === "운영중") return statusMarkerColors.open;
-  if (statusInfo.status === "브레이크타임") return statusMarkerColors.break;
-  if (statusInfo.status === "미운영") return statusMarkerColors.closed;
-  return statusMarkerColors.empty;
-}
+      if (statusInfo.status === "운영중") return statusMarkerColors.open;
+      if (statusInfo.status === "브레이크타임") return statusMarkerColors.break;
+      if (statusInfo.status === "미운영") return statusMarkerColors.closed;
+      return statusMarkerColors.empty;
+    }
 
     function getPinPriority(store) {
       if (currentPinMode === "open") {
@@ -1029,56 +1062,56 @@ function getCheckPinColor(type) {
     }
 
     function renderMarkerLegend() {
-  const titleEl = document.getElementById("markerLegendTitle");
-  const listEl = document.getElementById("markerLegendList");
-  if (!titleEl || !listEl) return;
+      const titleEl = document.getElementById("markerLegendTitle");
+      const listEl = document.getElementById("markerLegendList");
+      if (!titleEl || !listEl) return;
 
-  if (currentPinMode === "open") {
-    titleEl.textContent = "운영상태 핀 안내";
-    listEl.innerHTML = `
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${statusMarkerColors.open}"></span>
-        <span>운영중</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${statusMarkerColors.break}"></span>
-        <span>브레이크타임</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${statusMarkerColors.closed}"></span>
-        <span>운영종료</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${statusMarkerColors.empty}"></span>
-        <span>운영정보 없음</span>
-      </div>
-    `;
-  } else {
-    titleEl.textContent = "확인용 핀 안내";
-    listEl.innerHTML = `
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${checkMarkerColors.done}"></span>
-        <span>1팀</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${checkMarkerColors.needCheck}"></span>
-        <span>2팀</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${checkMarkerColors.notVisited}"></span>
-        <span>3팀</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${checkMarkerColors.other}"></span>
-        <span>기타</span>
-      </div>
-      <div class="marker-legend-item">
-        <span class="marker-dot" style="background:${checkMarkerColors.empty}"></span>
-        <span>빈칸</span>
-      </div>
-    `;
-  }
-}
+      if (currentPinMode === "open") {
+        titleEl.textContent = "운영상태 핀 안내";
+        listEl.innerHTML = `
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${statusMarkerColors.open}"></span>
+            <span>운영중</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${statusMarkerColors.break}"></span>
+            <span>브레이크타임</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${statusMarkerColors.closed}"></span>
+            <span>운영종료</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${statusMarkerColors.empty}"></span>
+            <span>운영정보 없음</span>
+          </div>
+        `;
+      } else {
+        titleEl.textContent = "확인용 핀 안내";
+        listEl.innerHTML = `
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${checkMarkerColors.done}"></span>
+            <span>1팀</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${checkMarkerColors.needCheck}"></span>
+            <span>2팀</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${checkMarkerColors.notVisited}"></span>
+            <span>3팀</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${checkMarkerColors.other}"></span>
+            <span>기타</span>
+          </div>
+          <div class="marker-legend-item">
+            <span class="marker-dot" style="background:${checkMarkerColors.empty}"></span>
+            <span>빈칸</span>
+          </div>
+        `;
+      }
+    }
 
     function toggleMarkerLegend() {
       const legend = document.getElementById("markerLegend");
@@ -1338,6 +1371,26 @@ function getCheckPinColor(type) {
       openedInfowindow = null;
     }
 
+    function clearSelectedStoreState(options = {}) {
+      const { keepRoute = false } = options;
+
+      closeAllInfoWindows();
+      selectedStoreName = null;
+
+      if (!keepRoute) {
+        routeEndStore = null;
+      }
+
+      const currentResults = getFilteredMarkerStores(getCurrentFilterValues());
+      renderStoreList(currentResults.length ? currentResults : storeMarkers);
+      renderDefaultMessage();
+      renderRouteInfo();
+    }
+
+    function handleInfoWindowClose() {
+      clearSelectedStoreState();
+    }
+
     function getSelectedStoreData() {
       return storeMarkers.find(store => store.name === selectedStoreName) || null;
     }
@@ -1383,6 +1436,7 @@ function getCheckPinColor(type) {
 
       return `
         <div class="info-box">
+          <button type="button" class="info-window-close" onclick="handleInfoWindowClose()">×</button>
           <h3>${store.name}</h3>
           <div><strong>주소</strong> <span>${store.address || "-"}</span></div>
           <div><strong>상세주소</strong> <span>${store.detail_address || "-"}</span></div>
@@ -1403,7 +1457,7 @@ function getCheckPinColor(type) {
       if (!store.infowindow) {
         store.infowindow = new kakao.maps.InfoWindow({
           content: createInfoWindowContent(store, store.region),
-          removable: true
+          removable: false
         });
       } else {
         store.infowindow.setContent(createInfoWindowContent(store, store.region));
