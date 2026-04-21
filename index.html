@@ -964,11 +964,11 @@ function getCheckPinColor(type) {
       }
 
       const value = String(store.brand || "").trim();
-      if (value === "1팀") return 0;
-      if (value === "2팀") return 1;
+      if (value === "1팀") return 4;
+      if (value === "2팀") return 3;
       if (value === "3팀") return 2;
-      if (value === "기타") return 3;
-      if (!value) return 4;
+      if (value === "기타") return 1;
+      if (!value) return 0;
       return 3;
     }
 
