@@ -830,9 +830,9 @@ function getCheckPinColor(type) {
   const value = String(type || "").trim();
 
   if (!value) return checkMarkerColors.empty;
-  if (value === "완료") return checkMarkerColors.done;
-  if (value === "확인필요") return checkMarkerColors.needCheck;
-  if (value === "미방문") return checkMarkerColors.notVisited;
+  if (value === "1팀") return checkMarkerColors.done;
+  if (value === "2팀") return checkMarkerColors.needCheck;
+  if (value === "3팀") return checkMarkerColors.notVisited;
   if (value === "기타") return checkMarkerColors.other;
 
   return checkMarkerColors.other;
@@ -964,9 +964,9 @@ function getCheckPinColor(type) {
       }
 
       const value = String(store.brand || "").trim();
-      if (value === "미방문") return 0;
-      if (value === "확인필요") return 1;
-      if (value === "완료") return 2;
+      if (value === "1팀") return 0;
+      if (value === "2팀") return 1;
+      if (value === "3팀") return 2;
       if (value === "기타") return 3;
       if (!value) return 4;
       return 3;
